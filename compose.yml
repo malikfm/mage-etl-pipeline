@@ -1,0 +1,104 @@
+name: mage-etl-pipeline
+
+# Default healthcheck settings
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 40s
+
+services:
+  mage:
+    container_name: mage-etl-mage
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ENV: production
+      MAGE_DATABASE_CONNECTION_URL: postgresql+psycopg2://${MAGE_DB_USER:-user}:${MAGE_DB_PASSWORD:-password}@${MAGE_DB_HOST:-postgres-mage}:${MAGE_DB_PORT:-5432}/${MAGE_DB_NAME:-mage}
+      SOURCE_POSTGRES_HOST: ${SOURCE_DB_HOST:-postgres-source}
+      SOURCE_POSTGRES_PORT: ${SOURCE_DB_PORT:-5433}
+      SOURCE_POSTGRES_USER: ${SOURCE_DB_USER:-user}
+      SOURCE_POSTGRES_PASSWORD: ${SOURCE_DB_PASSWORD:-password}
+      SOURCE_POSTGRES_DB: ${SOURCE_DB_NAME:-source_db}
+      DWH_POSTGRES_HOST: ${DWH_DB_HOST:-postgres-dwh}
+      DWH_POSTGRES_PORT: ${DWH_DB_PORT:-5434}
+      DWH_POSTGRES_USER: ${DWH_DB_USER:-user}
+      DWH_POSTGRES_PASSWORD: ${DWH_DB_PASSWORD:-password}
+      DWH_POSTGRES_DB: ${DWH_DB_NAME:-warehouse_db}
+    ports:
+      - 6789:6789
+    volumes:
+      - .:/home/src/
+    healthcheck:
+      <<: *healthcheck-defaults
+    depends_on:
+      - postgres-mage
+    networks:
+      - default
+    restart: unless-stopped
+
+  # Source Database (OLTP Simulation)
+  postgres-source:
+    image: postgres:17
+    container_name: mage-etl-postgres-source
+    environment:
+      POSTGRES_USER: ${SOURCE_DB_USER:-user}
+      POSTGRES_PASSWORD: ${SOURCE_DB_PASSWORD:-password}
+      POSTGRES_DB: ${SOURCE_DB_NAME:-source_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-source-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+    networks:
+      - default
+    restart: unless-stopped
+
+  # DWH Database
+  postgres-dwh:
+    image: postgres:17
+    container_name: mage-etl-postgres-dwh
+    environment:
+      POSTGRES_USER: ${DWH_DB_USER:-user}
+      POSTGRES_PASSWORD: ${DWH_DB_PASSWORD:-password}
+      POSTGRES_DB: ${DWH_DB_NAME:-warehouse_db}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-dwh-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+    networks:
+      - default
+    restart: unless-stopped
+
+  # Mage Metadata Database
+  postgres-mage:
+    image: postgres:17
+    container_name: mage-etl-postgres-mage
+    environment:
+      POSTGRES_USER: ${MAGE_DB_USER:-user}
+      POSTGRES_PASSWORD: ${MAGE_DB_PASSWORD:-password}
+      POSTGRES_DB: ${MAGE_DB_NAME:-mage}
+    volumes:
+      - postgres-mage-data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *healthcheck-defaults
+    networks:
+      - default
+    restart: unless-stopped
+
+volumes:
+  postgres-source-data:
+    name: mage-etl-postgres-source-data
+  postgres-dwh-data:
+    name: mage-etl-postgres-dwh-data
+  postgres-mage-data:
+    name: mage-etl-postgres-mage-data
+
+networks:
+  default:
+    driver: bridge
+    name: mage-etl-net
