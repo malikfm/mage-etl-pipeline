@@ -6,3 +6,6 @@ down:
 
 ps:
 	docker compose ps
+
+setup:
+	bash setup.sh
