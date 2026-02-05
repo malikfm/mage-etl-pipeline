@@ -15,8 +15,8 @@ def export_data_to_file(df: DataFrame, **kwargs) -> None:
     Docs: https://docs.mage.ai/design/data-loading#fileio
     """
     execution_date = kwargs['execution_date'].strftime("%Y-%m-%d")
-    table_name = "users" #kwargs['table_name']
-    output_dir = f'data/{table_name}/{execution_date}'
+    table_name = kwargs['table_name']
+    output_dir = f'data/{table_name}'
 
     os.makedirs(output_dir, exist_ok=True)
 
