@@ -138,7 +138,8 @@ def create_warehouse_tables(conn: connection) -> None:
                 address TEXT,
                 created_at TIMESTAMP WITH TIME ZONE,
                 updated_at TIMESTAMP WITH TIME ZONE,
-                deleted_at TIMESTAMP WITH TIME ZONE
+                deleted_at TIMESTAMP WITH TIME ZONE,
+                CONSTRAINT uq_users_batch_id_id UNIQUE (batch_id, id)
             );
         """)
 
@@ -151,7 +152,8 @@ def create_warehouse_tables(conn: connection) -> None:
                 price DECIMAL(10, 2),
                 created_at TIMESTAMP WITH TIME ZONE,
                 updated_at TIMESTAMP WITH TIME ZONE,
-                deleted_at TIMESTAMP WITH TIME ZONE
+                deleted_at TIMESTAMP WITH TIME ZONE,
+                CONSTRAINT uq_products_batch_id_id UNIQUE (batch_id, id)
             );
         """)
 
@@ -162,7 +164,8 @@ def create_warehouse_tables(conn: connection) -> None:
                 user_id INTEGER,
                 status VARCHAR(50),
                 created_at TIMESTAMP WITH TIME ZONE,
-                updated_at TIMESTAMP WITH TIME ZONE
+                updated_at TIMESTAMP WITH TIME ZONE,
+                CONSTRAINT uq_orders_batch_id_id UNIQUE (batch_id, id)
             );
         """)
 
@@ -172,14 +175,15 @@ def create_warehouse_tables(conn: connection) -> None:
                 id INTEGER,
                 order_id INTEGER,
                 product_id INTEGER,
-                quantity INTEGER
+                quantity INTEGER,
+                CONSTRAINT uq_order_items_batch_id_id UNIQUE (batch_id, id)
             );
         """)
 
         # Create raw_current tables (same structure as raw_ingest)
         cur.execute("""
             CREATE TABLE raw_current.users (
-                id INTEGER,
+                id INTEGER PRIMARY KEY,
                 name VARCHAR(255),
                 email VARCHAR(255),
                 address TEXT,
@@ -191,7 +195,7 @@ def create_warehouse_tables(conn: connection) -> None:
 
         cur.execute("""
             CREATE TABLE raw_current.products (
-                id INTEGER,
+                id INTEGER PRIMARY KEY,
                 name VARCHAR(255),
                 category VARCHAR(100),
                 price DECIMAL(10, 2),
@@ -203,8 +207,8 @@ def create_warehouse_tables(conn: connection) -> None:
 
         cur.execute("""
             CREATE TABLE raw_current.orders (
-                id INTEGER,
-                user_id INTEGER,
+                id INTEGER PRIMARY KEY,
+                user_id INTEGER REFERENCES raw_current.users(id),
                 status VARCHAR(50),
                 created_at TIMESTAMP WITH TIME ZONE,
                 updated_at TIMESTAMP WITH TIME ZONE
@@ -213,9 +217,9 @@ def create_warehouse_tables(conn: connection) -> None:
 
         cur.execute("""
             CREATE TABLE raw_current.order_items (
-                id INTEGER,
-                order_id INTEGER,
-                product_id INTEGER,
+                id INTEGER PRIMARY KEY,
+                order_id INTEGER REFERENCES raw_current.orders(id),
+                product_id INTEGER REFERENCES raw_current.products(id),
                 quantity INTEGER
             );
         """)
