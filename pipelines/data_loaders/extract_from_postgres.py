@@ -17,8 +17,8 @@ def load_data_from_postgres(*args, **kwargs):
     Docs: https://docs.mage.ai/design/data-loading#postgresql
     """
     execution_date = kwargs['execution_date'].strftime("%Y-%m-%d")
-    table_name = "users" #kwargs['table_name']
-    selected_columns = "*" #kwargs['selected_columns']
+    table_name = kwargs['table_name']
+    selected_columns = kwargs['selected_columns']
 
     query = f"""
     SELECT {selected_columns} FROM {table_name}
