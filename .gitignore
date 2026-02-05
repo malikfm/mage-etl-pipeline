@@ -210,4 +210,6 @@ __marimo__/
 .DS_Store
 
 # Mage
+.file_versions/
+data/
 mage_data/
